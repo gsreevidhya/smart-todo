@@ -1,11 +1,9 @@
 import { supabase } from './supabase.js'
-console.log('app.js is working')
 
 const addBtn = document.getElementById('addBtn')
 const taskInput = document.getElementById('taskInput')
 const taskList = document.getElementById('taskList')
 
-// LOAD tasks from database when page opens
 async function loadTasks() {
   const { data, error } = await supabase
     .from('tasks')
@@ -20,11 +18,23 @@ async function loadTasks() {
   data.forEach(task => {
     const li = document.createElement('li')
     li.textContent = task.text
+
+    // delete button
+    const deleteBtn = document.createElement('button')
+    deleteBtn.textContent = '✕'
+    deleteBtn.onclick = async () => {
+      await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', task.id)
+      loadTasks()
+    }
+
+    li.appendChild(deleteBtn)
     taskList.appendChild(li)
   })
 }
 
-// SAVE task to database when user clicks add
 addBtn.addEventListener('click', async function() {
   const taskText = taskInput.value
 
@@ -33,16 +43,20 @@ addBtn.addEventListener('click', async function() {
     return
   }
 
+  addBtn.disabled = true
+
   const { error } = await supabase
     .from('tasks')
     .insert([{ text: taskText }])
 
   if (error) {
     console.log('error saving task:', error)
+    addBtn.disabled = false
     return
   }
 
   taskInput.value = ''
+  addBtn.disabled = false
   loadTasks()
 })
 
